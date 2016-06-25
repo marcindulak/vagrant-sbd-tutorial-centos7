@@ -1,7 +1,7 @@
 Hi,
 
 I'm trying to get familiar with STONITH Block Devices (SBD) on a 3-node CentOS7 built in VirtualBox.
-The setup is available at https://github.com/marcindulak/vagrant-sbd-tutorial-centos7.git
+The complete setup is available at https://github.com/marcindulak/vagrant-sbd-tutorial-centos7.git
 so hopefully with some help I'll be able to make it work.
 
 Question 1:
@@ -17,16 +17,44 @@ While there is 'yum -y install sbd' on CentOS7 the fence_sbd agent has not been 
 Therefore I rebuild Fedora 24 package using the latest https://github.com/ClusterLabs/fence-agents/archive/v4.0.22.tar.gz
 plus the update to the fence_sbd from https://github.com/ClusterLabs/fence-agents/pull/73
 
-After reading http://blog.clusterlabs.org/blog/2015/sbd-fun-and-profit I expect with just one sotnith resource configured
+After reading http://blog.clusterlabs.org/blog/2015/sbd-fun-and-profit I expect with just one stonith resource configured
 a node will be fenced when I stop pacemaker and corosync `pcs cluster stop node` or just `stonith_admin -F node`, but this is not the case.
 
 The configuration is inspired by https://www.novell.com/support/kb/doc.php?id=7009485 and
 https://www.suse.com/documentation/sle-ha-12/book_sleha/data/sec_ha_storage_protect_fencing.html
 
-In order to configure stonith on the cluster and test it I run the following commands:
+In order to configure stonith on the cluster and test it I run the following script:
 
 $ sh -x run01.sh 2>&1 | tee run01.txt
 
-with the following result:
+with the result:
 
 $ cat run01.txt
+
+Question 2:
+As can be seen the node-1 is not shutdown by `pcs cluster stop node-1` executed on itself.
+I found some discussions on users@clusterlabs.org about whether a node running SBD resource can fence itself,
+but the conclusion was not clear to me.
+
+Question 3:
+Neither node-1 is fenced by `stonith_admin -F node-1` executed on node-2, despite the fact
+/var/log/messages on node-2 (the one currently running MyStonith) reporting:
+...
+notice: Operation 'off' [3312] (call 2 from stonith_admin.3291) for host 'node-1' with device 'MyStonith' returned: 0 (OK)
+...
+What is happenning here?
+
+Question 4 (for the future):
+Assuming the node-1 was shutdown, what is the way of operating SBD?
+I see the sbd lists now:
+0       node-3  clear
+1       node-1  off    node-2
+2       node-2  clear
+How to clear the status of node-1?
+
+Question 5 (also for the future):
+While the relation 'stonith-timeout = Timeout (msgwait) + 20%' presented
+at https://www.suse.com/documentation/sle_ha/book_sleha/data/sec_ha_storage_protect_fencing.html
+is rather clearly described, I wonder about the relation of 'stonith-timeout'
+to other timeouts like the 'monitor interval=60s' reported by `pcs stonith show MyStonith`.
+
