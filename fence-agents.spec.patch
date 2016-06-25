@@ -1,0 +1,60 @@
+--- fence-agents.spec.orig      2016-02-03 16:53:09.000000000 -0500
++++ fence-agents.spec   2016-06-20 14:17:31.480469102 -0400
+@@ -11,21 +11,22 @@
+ ###############################################################################
+ 
+ # keep around ready for later user
+-## global alphatag git0a6184070
++%global alphatag 1c7ca454f8384fbeabe31965aa895bbcc8fb842c
++%global fedora 1
+ 
+ Name: fence-agents
+ Summary: Fence Agents for Red Hat Cluster
+-Version: 4.0.20
++Version: 4.0.22
+ Release: 2%{?alphatag:.%{alphatag}}%{?dist}
+ License: GPLv2+ and LGPLv2+
+ Group: System Environment/Base
+ URL: http://sourceware.org/cluster/wiki/
+-Source0: https://fedorahosted.org/releases/f/e/fence-agents/%{name}-%{version}.tar.xz
++Source0: https://github.com/ClusterLabs/fence-agents/archive/%{alphatag}.tar.gz#/%{name}-%{version}.tar.gz
+ 
+ %if 0%{?fedora}
+ %global supportedagents alom amt apc apc_snmp bladecenter brocade cisco_mds cisco_ucs docker drac5 eaton_snmp emerson eps hpblade ibmblade ifmib ilo ilo_mp ilo_ssh ilo_moonshot intelmodular ipdu ipmilan kdump ldom lpar netio ovh pve rhevm rsa rsb scsi vmware_soap wti
+-%global testagents zvm virsh raritan rcd_serial
+-%global allfenceagents fence-agents-alom fence-agents-amt fence-agents-apc fence-agents-apc-snmp fence-agents-bladecenter fence-agents-brocade fence-agents-cisco-mds fence-agents-cisco-ucs fence-agents-docker fence-agents-drac5 fence-agents-eaton-snmp fence-agents-eps fence-agents-hpblade fence-agents-ibmblade fence-agents-ifmib fence-agents-ilo2 fence-agents-ilo-mp fence-agents-ilo-ssh fence-agents-ilo-moonshot fence-agents-intelmodular fence-agents-ipdu fence-agents-ipmilan fence-agents-kdump fence-agents-ldom fence-agents-lpar fence-agents-netio fence-agents-ovh fence-agents-rhevm fence-agents-rsa fence-agents-rsb fence-agents-scsi fence-agents-vmware-soap fence-agents-wti fence-agents-zvm fence-agents-emerson
++%global testagents zvm virsh raritan rcd_serial sbd
++%global allfenceagents fence-agents-alom fence-agents-amt fence-agents-apc fence-agents-apc-snmp fence-agents-bladecenter fence-agents-brocade fence-agents-cisco-mds fence-agents-cisco-ucs fence-agents-docker fence-agents-drac5 fence-agents-eaton-snmp fence-agents-eps fence-agents-hpblade fence-agents-ibmblade fence-agents-ifmib fence-agents-ilo2 fence-agents-ilo-mp fence-agents-ilo-ssh fence-agents-ilo-moonshot fence-agents-intelmodular fence-agents-ipdu fence-agents-ipmilan fence-agents-kdump fence-agents-ldom fence-agents-lpar fence-agents-netio fence-agents-ovh fence-agents-rhevm fence-agents-rsa fence-agents-rsb fence-agents-scsi fence-agents-vmware-soap fence-agents-wti fence-agents-zvm fence-agents-emerson fence-agents-sbd
+ %endif
+ 
+ ## Setup/build bits
+@@ -611,6 +612,19 @@
+ %{_mandir}/man8/fence_sanbox2.8*
+ %endif
+ 
++%package sbd
++License: GPLv2+ and LGPLv2+
++Group: System Environment/Base
++Summary: Fence agent for SBD (STONITH Block Devices)
++Requires: fence-agents-common sbd
++Obsoletes: fence-agents
++%description sbd
++The fence-agents-sbd package contains fence agent for SBD (STONITH Block Devices)
++%files sbd
++%defattr(-,root,root,-)
++%{_sbindir}/fence_sbd
++%{_mandir}/man8/fence_sbd.8*
++
+ %package scsi
+ License: GPLv2+ and LGPLv2+
+ Group: System Environment/Base
+@@ -677,7 +691,9 @@
+ The fence-agents-zvm package contains a fence agent for IBM z/VM over IP.
+ %files zvm
+ %defattr(-,root,root,-)
++%{_sbindir}/fence_zvm
+ %{_sbindir}/fence_zvmip
++%{_mandir}/man8/fence_zvm.8*
+ %{_mandir}/man8/fence_zvmip.8*
+ 
+ %changelog

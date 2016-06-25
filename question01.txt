@@ -1,0 +1,32 @@
+Hi,
+
+I'm trying to get familiar with STONITH Block Devices (SBD) on a 3-node CentOS7 built in VirtualBox.
+The setup is available at https://github.com/marcindulak/vagrant-sbd-tutorial-centos7.git
+so hopefully with some help I'll be able to make it work.
+
+Question 1:
+The shared device /dev/sbd1 is the VirtualBox's "shareable hard disk" https://www.virtualbox.org/manual/ch05.html#hdimagewrites
+will SBD fencing work with that type of storage?
+
+I start the cluster using vagrant_1.8.1 and virtualbox-4.3 with:
+$ vagrant up  # takes ~15 minutes
+
+The setup brings up the nodes, installs the necessary packages, and prepares for the configuration of the pcs cluster.
+You can see which scripts the nodes execute at the bottom of the Vagrantfile.
+While there is 'yum -y install sbd' on CentOS7 the fence_sbd agent has not been packaged yet.
+Therefore I rebuild Fedora 24 package using the latest https://github.com/ClusterLabs/fence-agents/archive/v4.0.22.tar.gz
+plus the update to the fence_sbd from https://github.com/ClusterLabs/fence-agents/pull/73
+
+After reading http://blog.clusterlabs.org/blog/2015/sbd-fun-and-profit I expect with just one sotnith resource configured
+a node will be fenced when I stop pacemaker and corosync `pcs cluster stop node` or just `stonith_admin -F node`, but this is not the case.
+
+The configuration is inspired by https://www.novell.com/support/kb/doc.php?id=7009485 and
+https://www.suse.com/documentation/sle-ha-12/book_sleha/data/sec_ha_storage_protect_fencing.html
+
+In order to configure stonith on the cluster and test it I run the following commands:
+
+$ sh -x run01.sh 2>&1 | tee run01.txt
+
+with the following result:
+
+$ cat run01.txt

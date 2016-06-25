@@ -1,0 +1,173 @@
++ vagrant ssh node-1 -c sudo su - -c 'pcs cluster auth -u hacluster -p password node-1 node-2 node-3'
+node-1: Authorized
+node-3: Authorized
+node-2: Authorized
+Connection to 127.0.0.1 closed.
++ vagrant ssh node-1 -c sudo su - -c 'pcs cluster setup --name mycluster node-1 node-2 node-3'
+Shutting down pacemaker/corosync services...
+Redirecting to /bin/systemctl stop  pacemaker.service
+Redirecting to /bin/systemctl stop  corosync.service
+Killing any remaining services...
+Removing all cluster configuration files...
+node-1: Succeeded
+node-2: Succeeded
+node-3: Succeeded
+Synchronizing pcsd certificates on nodes node-1, node-2, node-3...
+node-1: Success
+node-3: Success
+node-2: Success
+
+Restaring pcsd on the nodes in order to reload the certificates...
+node-1: Success
+node-3: Success
+node-2: Success
+Connection to 127.0.0.1 closed.
++ sleep 30
++ vagrant ssh node-1 -c sudo su - -c 'pcs cluster start --all'
+node-3: Starting Cluster...
+node-1: Starting Cluster...
+node-2: Starting Cluster...
+Connection to 127.0.0.1 closed.
++ sleep 30
++ vagrant ssh node-1 -c sudo su - -c 'corosync-cfgtool -s'
+Printing ring status.
+Local node ID 1
+RING ID 0
+	id	= 192.168.10.11
+	status	= ring 0 active with no faults
+Connection to 127.0.0.1 closed.
++ vagrant ssh node-1 -c sudo su - -c 'pcs status corosync'
+
+Membership information
+----------------------
+    Nodeid      Votes Name
+         1          1 node-1 (local)
+         2          1 node-2
+         3          1 node-3
+Connection to 127.0.0.1 closed.
++ vagrant ssh node-1 -c sudo su - -c 'pcs status'
+Cluster name: mycluster
+WARNING: no stonith devices and stonith-enabled is not false
+Last updated: Sat Jun 25 15:08:10 2016		Last change: Sat Jun 25 15:07:51 2016 by hacluster via crmd on node-1
+Stack: corosync
+Current DC: node-1 (version 1.1.13-10.el7_2.2-44eb2dd) - partition with quorum
+3 nodes and 0 resources configured
+
+Online: [ node-1 node-2 node-3 ]
+
+Full list of resources:
+
+
+PCSD Status:
+  node-1: Online
+  node-2: Online
+  node-3: Online
+
+Daemon Status:
+  corosync: active/disabled
+  pacemaker: active/disabled
+  pcsd: active/enabled
+Connection to 127.0.0.1 closed.
++ vagrant ssh node-1 -c sudo su - -c 'sbd -d /dev/sdb1 list'
+0	node-3	clear	
+1	node-1	clear	
+2	node-2	clear	
+Connection to 127.0.0.1 closed.
++ vagrant ssh node-1 -c sudo su - -c 'sbd -d /dev/sdb1 dump'
+==Dumping header on disk /dev/sdb1
+Header version     : 2.1
+UUID               : 9d977f2c-c26e-4f4f-9a53-db415fa3f309
+Number of slots    : 255
+Sector size        : 512
+Timeout (watchdog) : 10
+Timeout (allocate) : 2
+Timeout (loop)     : 1
+Timeout (msgwait)  : 20
+==Header on disk /dev/sdb1 is dumped
+Connection to 127.0.0.1 closed.
++ vagrant ssh node-1 -c sudo su - -c 'pcs stonith list'
+fence_sbd - Fence agent for sbd
+Connection to 127.0.0.1 closed.
++ vagrant ssh node-1 -c sudo su - -c 'pcs property set stonith-enabled=true'
+Connection to 127.0.0.1 closed.
++ vagrant ssh node-1 -c sudo su - -c 'pcs property set stonith-timeout=24s'
+Connection to 127.0.0.1 closed.
++ vagrant ssh node-1 -c sudo su - -c 'pcs stonith create MyStonith fence_sbd devices=/dev/sdb1 power_timeout=21 action=off'
+Connection to 127.0.0.1 closed.
++ sleep 30
++ + cut -d: -f2
+vagrant+ cut -d- -f2
++ tr -d \r
+ ssh node-1 -c sudo su - -c 'crm_resource -r MyStonith query --locate'
+Connection to 127.0.0.1 closed.
++ active=1 
++ python -c import os; print({1: 2, 2: 1, 3: 1}[1 ])
++ passive=2
++ vagrant ssh node-1 -c sudo su - -c 'pcs stonith show MyStonith'
+ Resource: MyStonith (class=stonith type=fence_sbd)
+  Attributes: devices=/dev/sdb1 power_timeout=21 action=off 
+  Operations: monitor interval=60s (MyStonith-monitor-interval-60s)
+Connection to 127.0.0.1 closed.
++ vagrant ssh node-1 -c sudo su - -c 'pcs cluster stop node-1 '
+node-1: Stopping Cluster (pacemaker)...
+node-1: Stopping Cluster (corosync)...
+Connection to 127.0.0.1 closed.
++ sleep 30
++ vagrant ssh node-2 -c sudo su - -c 'pcs status'
+Cluster name: mycluster
+Last updated: Sat Jun 25 15:09:44 2016		Last change: Sat Jun 25 15:08:29 2016 by root via cibadmin on node-1
+Stack: corosync
+Current DC: node-2 (version 1.1.13-10.el7_2.2-44eb2dd) - partition with quorum
+3 nodes and 1 resource configured
+
+Online: [ node-2 node-3 ]
+OFFLINE: [ node-1 ]
+
+Full list of resources:
+
+ MyStonith	(stonith:fence_sbd):	Started node-2
+
+PCSD Status:
+  node-1: Online
+  node-2: Online
+  node-3: Online
+
+Daemon Status:
+  corosync: active/disabled
+  pacemaker: active/disabled
+  pcsd: active/enabled
+Connection to 127.0.0.1 closed.
++ vagrant ssh node-2 -c sudo su - -c 'stonith_admin -F node-1 '
+Connection to 127.0.0.1 closed.
++ sleep 30
++ vagrant ssh node-2 -c sudo su - -c 'grep stonith-ng /var/log/messages'
+Jun 25 15:07:31 localhost stonith-ng[3102]:  notice: Additional logging available in /var/log/cluster/corosync.log
+Jun 25 15:07:31 localhost stonith-ng[3102]:  notice: Connecting to cluster infrastructure: corosync
+Jun 25 15:07:31 localhost stonith-ng[3102]:  notice: crm_update_peer_proc: Node node-2[2] - state is now member (was (null))
+Jun 25 15:07:32 localhost stonith-ng[3102]:  notice: Watching for stonith topology changes
+Jun 25 15:07:32 localhost stonith-ng[3102]:  notice: Added 'watchdog' to the device list (1 active devices)
+Jun 25 15:07:32 localhost stonith-ng[3102]:  notice: crm_update_peer_proc: Node node-1[1] - state is now member (was (null))
+Jun 25 15:07:32 localhost stonith-ng[3102]:  notice: crm_update_peer_proc: Node node-3[3] - state is now member (was (null))
+Jun 25 15:07:32 localhost stonith-ng[3102]:  notice: New watchdog timeout 10s (was 0s)
+Jun 25 15:08:29 localhost stonith-ng[3102]:  notice: Relying on watchdog integration for fencing
+Jun 25 15:08:30 localhost stonith-ng[3102]:  notice: Added 'MyStonith' to the device list (2 active devices)
+Jun 25 15:09:09 localhost stonith-ng[3102]:  notice: crm_update_peer_proc: Node node-1[1] - state is now lost (was member)
+Jun 25 15:09:09 localhost stonith-ng[3102]:  notice: Removing node-1/1 from the membership list
+Jun 25 15:09:09 localhost stonith-ng[3102]:  notice: Purged 1 peers with id=1 and/or uname=node-1 from the membership cache
+Jun 25 15:09:49 localhost stonith-ng[3102]:  notice: Client stonith_admin.3291.100f7636 wants to fence (off) 'node-1' with device '(any)'
+Jun 25 15:09:49 localhost stonith-ng[3102]:  notice: Initiating remote operation off for node-1: c9f7bde0-487c-4642-8d9c-6f55a1f0874d (0)
+Jun 25 15:09:49 localhost stonith-ng[3102]:  notice: watchdog can not fence (off) node-1: static-list
+Jun 25 15:09:49 localhost stonith-ng[3102]:  notice: MyStonith can fence (off) node-1: dynamic-list
+Jun 25 15:09:49 localhost stonith-ng[3102]:  notice: watchdog can not fence (off) node-1: static-list
+Jun 25 15:10:09 localhost stonith-ng[3102]:  notice: Operation 'off' [3312] (call 2 from stonith_admin.3291) for host 'node-1' with device 'MyStonith' returned: 0 (OK)
+Jun 25 15:10:09 localhost stonith-ng[3102]:  notice: Operation off of node-1 by node-2 for stonith_admin.3291@node-2.c9f7bde0: OK
+Connection to 127.0.0.1 closed.
++ vagrant ssh node-1 -c sudo su - -c 'sbd -d /dev/sdb1 list'
+0	node-3	clear	
+1	node-1	off	node-2
+2	node-2	clear	
+Connection to 127.0.0.1 closed.
++ vagrant ssh node-1 -c "sudo su - -c 'uptime'"
+ 15:11:18 up 17 min,  1 user,  load average: 0.04, 0.10, 0.06
+Connection to 127.0.0.1 closed.
+
